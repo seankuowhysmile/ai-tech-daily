@@ -211,6 +211,7 @@ function readPosts(config) {
 
     posts.push({
       slug,
+      baseName: source.baseName,
       title,
       date,
       dateLabel: formatDate(date),
@@ -223,12 +224,14 @@ function readPosts(config) {
   }
 
   // 新到舊。沒有日期的排最後。
+  // 同一天有多篇時用檔名昇冪：2026-09-05.md 是 2026-09-05-deep-dive.md 的前綴，
+  // 所以純日期的那篇（日報）會排在當天的衍生文章前面，順序才穩定可預期。
   posts.sort((a, b) => {
-    if (!a.date && !b.date) return a.title.localeCompare(b.title);
+    if (!a.date && !b.date) return a.baseName.localeCompare(b.baseName);
     if (!a.date) return 1;
     if (!b.date) return -1;
     if (a.date !== b.date) return b.date.localeCompare(a.date);
-    return a.title.localeCompare(b.title);
+    return a.baseName.localeCompare(b.baseName);
   });
 
   return posts;
