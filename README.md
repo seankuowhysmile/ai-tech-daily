@@ -1,6 +1,6 @@
-# micro-blog-engine
+# AI 科技日報 — 靜態網誌
 
-一個輕量的個人 Markdown 靜態網誌產生器。沒有框架，只有兩個依賴（`marked`、`gray-matter`）與大約 500 行自己的程式碼。
+把 `ai-tech-vlog-bot` 每天產出的 Markdown 渲染成網站。沒有框架，兩個依賴（`marked`、`gray-matter`）加上約 550 行自己的程式碼。
 
 ```bash
 pnpm install   # 只需要做一次
@@ -8,72 +8,93 @@ pnpm dev       # 開發模式：自動重建 + 瀏覽器自動刷新 → http://
 pnpm build     # 正式建置 → dist/
 ```
 
+## 整體架構
+
+```
+ai-tech-vlog-bot（private）              這個 repo（public）
+├── src/            Python 產生器         ├── posts/       ← 收到的 .md
+├── archive/*.md ───每天 push───────────▶ ├── templates/   版型
+└── .github/workflows/daily.yml          ├── build.js 等
+                                          └── .github/workflows/deploy.yml
+                                                    │
+                                                    ▼
+                                            GitHub Pages
+```
+
+產生器留在私有 repo，只有文章內容跟網誌本身是公開的。
+
 ## 專案結構
 
 ```
-posts/               你的文章（.md）
-├── welcome.md               純文字文章
-└── typography-test/         有附圖的文章
-    ├── index.md
-    └── sample.svg           圖片跟文章放一起，路徑直接寫檔名
-
+posts/               文章（.md），由 bot 每天同步進來
 templates/           版型（純 HTML + {{token}}，打開就是網頁）
-├── layout.html              外框：head、導覽列、頁尾、深色模式腳本
-├── index.html               首頁的文章列表
-├── post.html                單篇文章
-└── style.css                樣式表
-
-static/              （可選，自己建立）原樣複製到網站根目錄，放 favicon、CNAME 之類
-dist/                建置產物，每次 build 會先清空，不進版控
-
-site.config.js       站名、作者、網址、導覽列
-build.js             建置腳本
-dev.js               開發伺服器
-render.js            模板引擎
+├── layout.html          外框：head、導覽列、頁尾、深色模式腳本
+├── index.html           首頁（最近 30 篇）
+├── archive.html         全部文章列表
+├── post.html            單篇文章
+└── style.css            樣式表
+static/              （可選，自己建立）原樣複製到網站根目錄，放 favicon、CNAME
+dist/                建置產物，每次 build 會清空，不進版控
+site.config.js       站名、網址、導覽列、首頁篇數
+build.js dev.js render.js
+docs/bot-publish-step.yml   要貼進 bot repo 的 workflow 片段
 ```
 
-## 寫一篇文章
+## 首次設定（四步）
 
-在 `posts/` 放一個 `.md` 檔：
+### 1. 建立公開 repo 並推上去
 
-```markdown
----
-title: 文章標題
-date: 2026-09-05
-description: 首頁列表要顯示的摘要
-draft: false
-slug: custom-url-name
----
-
-正文從這裡開始。
+```bash
+git remote add origin https://github.com/<你的帳號>/ai-tech-daily.git
+git push -u origin main
 ```
 
-五個欄位全部可省略：
+### 2. 開啟 GitHub Pages
 
-| 欄位 | 省略時 |
+到 repo 的 **Settings → Pages → Build and deployment → Source**，選 **GitHub Actions**。
+
+> 這一步**只有你能做**，沒有任何腳本能代勞。沒選這個，workflow 會跑完但不會發佈。
+
+接著把 `site.config.js` 的 `url` 改成 `https://<你的帳號>.github.io/ai-tech-daily`（只影響 RSS 裡的連結）。
+
+### 3. 產生 PAT 讓 bot 能推文章過來
+
+到 **GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens**，建立一個：
+
+- **Repository access**：只選這個網誌 repo
+- **Permissions → Repository permissions → Contents**：**Read and write**
+
+複製產生的 token，到 **ai-tech-vlog-bot 的 Settings → Secrets and variables → Actions**，新增 secret：
+
+- Name：`BLOG_REPO_TOKEN`
+- Secret：剛剛複製的 token
+
+### 4. 在 bot 的 workflow 加上推送步驟
+
+把 `docs/bot-publish-step.yml` 的內容貼進 `ai-tech-vlog-bot/.github/workflows/daily.yml`，位置在 `Commit sent history and article archive` 之後、`Archive video to GitHub Release` 之前。記得把裡面的 `BLOG_REPO` 改成你的實際 repo。
+
+完成後，每天的流程是：bot 產文 → 推到這個 repo → 自動 build → Pages 更新。
+
+## 文章格式
+
+bot 產出的 `YYYY-MM-DD.md` **不需要任何 front matter**，這個引擎會自動處理：
+
+| 欄位 | 來源 |
 | --- | --- |
-| `title` | 取內文第一個 `#` 標題，再沒有就用檔名 |
-| `date` | 取檔名的 `YYYY-MM-DD-` 前綴；再沒有就發出警告並排到最後 |
-| `description` | 自動擷取內文前 120 字（先去除 Markdown 語法） |
-| `draft` | 預設 `false`；設為 `true` 則完全不輸出 |
-| `slug` | 由檔名產生，網址為 `/posts/<slug>/` |
+| 標題 | 內文第一個 `# ` 標題 |
+| 日期 | 檔名的 `YYYY-MM-DD`（同時支援 `2026-09-04.md` 與 `2026-09-04-標題.md`）|
+| 摘要 | 第一個「真正的段落」，會跳過標題、清單、`<details>`。剛好就是「【時事層：一句話看懂】」下面那句 |
+| 網址 | `/posts/2026-09-04/` |
 
-建議檔名用英文。中文可用，但網址會變成百分號編碼。
-
-## 部署到 GitHub Pages
-
-`.github/workflows/deploy.yml` 已經寫好了，流程是 push → 自動 build → 自動部署。
-
-**但有一個只有你能做的步驟**：到 repo 的 **Settings → Pages → Build and deployment → Source**，選 **GitHub Actions**。沒選這個，workflow 會跑但不會發佈。
-
-另外記得把 `site.config.js` 的 `url` 改成你的實際網址（只影響 RSS 裡的連結）。
+你也可以手寫文章並加上 front matter 覆寫這些預設值，`draft: true` 則完全不輸出。
 
 ## 設計上的幾個決定
 
 這些是刻意的，不是疏漏：
 
-- **全站相對路徑**，不使用任何 `/` 開頭的絕對路徑。所以專案站、使用者站、自訂網域、本機都能通用，換部署位置不用改程式。
+- **全站相對路徑**，不使用任何 `/` 開頭的絕對路徑。專案站、使用者站、自訂網域、本機都通用，換部署位置不用改程式。
 - **日期全程當字串處理**，不建立 `Date` 物件做時區運算，也絕不讀取檔案修改時間（`git clone` 不保留 mtime，用它當預設值會讓 CI 上的所有文章都變成「今天」）。
 - **模板只做單次掃描替換**，`{{key}}` 自動 HTML 跳脫、`{{{key}}}` 不跳脫。文章內容裡的 `{{...}}` 不會被誤判成模板指令。
-- **不做 Markdown 淨化**。內容來源是你自己的檔案，保留原生 HTML 讓你能直接嵌 `<details>`、`<iframe>` 等。若日後開放他人投稿，這個前提就不成立了。
+- **不做 Markdown 淨化**。bot 產出的 `<details>` 摺疊區塊需要原生 HTML 通過。前提是內容來源可信；若日後開放他人投稿，這個前提就不成立了。
+- **首頁只列最近 30 篇**，完整清單在 `/archive/`。每天一篇的節奏下，首頁的用途是「看最近發生什麼」。
 - **不裝語法高亮**。`marked` 已輸出 `class="language-xxx"`，未來要加是純加法。

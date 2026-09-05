@@ -1,0 +1,15 @@
+<section class="home-intro">
+  <h1>全部文章</h1>
+  <p class="home-description">共 {{total}} 篇。</p>
+</section>
+
+<ul class="archive-list">
+  {{#each posts}}
+  <li class="archive-item">
+    <a class="archive-link" href="{{url}}">
+      <time class="archive-date" datetime="{{date}}">{{date}}</time>
+      <span class="archive-title">{{title}}</span>
+    </a>
+  </li>
+  {{/each}}
+</ul>

@@ -1,0 +1,45 @@
+# ============================================================================
+# 貼進 ai-tech-vlog-bot 的 .github/workflows/daily.yml
+#
+# 位置：接在 "Commit sent history and article archive" 這一步之後、
+#      "Archive video to GitHub Release" 這一步之前。
+#      （縮排要對齊其他 step，也就是 6 個空格開頭的 "- name:"）
+#
+# 為什麼用 PAT 而不是預設的 GITHUB_TOKEN：
+#   GitHub 規定「用 GITHUB_TOKEN 推的 commit 不會觸發任何 workflow」，
+#   這是為了避免無限迴圈。若用它推到網誌 repo，那邊的 Pages 部署永遠不會跑，
+#   而且不會報錯，只是安靜地什麼都沒發生。PAT 沒有這個限制。
+#
+# 為什麼 commit 訊息不帶 [skip ci]：
+#   同理，帶了就會被略過。你原本 daily.yml 裡的 [skip ci] 是給自己 repo 用的，
+#   維持原樣沒問題，這一步是推到「另一個 repo」，用自己的訊息。
+#
+# 沒設定 BLOG_REPO_TOKEN 時會直接跳過，不會讓你原本的 pipeline 失敗。
+# ============================================================================
+
+      - name: Publish articles to blog repo
+        if: success()
+        env:
+          BLOG_REPO_TOKEN: ${{ secrets.BLOG_REPO_TOKEN }}
+          # ⚠️ 改成你的公開網誌 repo，格式為 帳號/repo名稱
+          BLOG_REPO: your-account/ai-tech-daily
+        run: |
+          if [ -z "$BLOG_REPO_TOKEN" ]; then
+            echo "未設定 BLOG_REPO_TOKEN，略過網誌發佈"
+            exit 0
+          fi
+          rm -rf /tmp/blog
+          git clone --depth 1 \
+            "https://x-access-token:${BLOG_REPO_TOKEN}@github.com/${BLOG_REPO}.git" /tmp/blog
+          mkdir -p /tmp/blog/posts
+          cp archive/*.md /tmp/blog/posts/
+          cd /tmp/blog
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add posts/
+          if git diff --cached --quiet; then
+            echo "網誌無新文章"
+            exit 0
+          fi
+          git commit -m "content: 同步每日文章 $(TZ=Asia/Taipei date +%Y-%m-%d)"
+          git push

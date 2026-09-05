@@ -48,7 +48,8 @@ function resolveDate(frontMatterDate, baseName) {
     const trimmed = frontMatterDate.trim();
     if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) return trimmed.slice(0, 10);
   }
-  const fromFileName = baseName.match(/^(\d{4}-\d{2}-\d{2})-/);
+  // 同時支援 2026-09-04.md（純日期，每日產出常見）與 2026-09-04-標題.md
+  const fromFileName = baseName.match(/^(\d{4}-\d{2}-\d{2})(?:-|$)/);
   if (fromFileName) return fromFileName[1];
   return null;
 }
@@ -88,6 +89,26 @@ function makeExcerpt(text, maxLength) {
 function firstHeading(markdown) {
   const match = markdown.match(/^\s{0,3}#\s+(.+)$/m);
   return match ? match[1].trim() : null;
+}
+
+// 取第一個「真正的段落」當摘要來源：跳過標題、清單、引言、表格、原生 HTML。
+// 這樣每日摘要那種「# 大標 → ## 小標 → 一句話結論」的結構，
+// 抓到的會是那句結論，而不是把標題再唸一遍。
+function firstParagraph(markdown) {
+  const withoutCode = markdown.replace(/```[\s\S]*?```/g, '');
+  for (const block of withoutCode.split(/\n\s*\n/)) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    if (/^#{1,6}\s/.test(trimmed)) continue; // 標題
+    if (/^</.test(trimmed)) continue; // 原生 HTML（<details> 之類）
+    if (/^(?:[-*+]|\d+\.)\s/.test(trimmed)) continue; // 清單
+    if (/^>/.test(trimmed)) continue; // 引言
+    if (/^\|/.test(trimmed)) continue; // 表格
+    if (/^(?:[-*_]\s*){3,}$/.test(trimmed)) continue; // 分隔線
+    const text = stripMarkdown(trimmed);
+    if (text) return text;
+  }
+  return stripMarkdown(withoutCode);
 }
 
 // 網址路徑一律正斜線，且對每個路徑片段做百分號編碼（中文 slug 需要）。
@@ -175,11 +196,18 @@ function readPosts(config) {
     }
     seenSlugs.set(slug, relativeSource);
 
-    const title = String(data.title || firstHeading(content) || slug);
-    const plainText = stripMarkdown(content);
+    // 標題若是從內文第一個 # 抓來的，就把那一行從內文移除，
+    // 否則版型的 <h1> 加上內文的 <h1> 會讓標題連續出現兩次。
+    const headingTitle = firstHeading(content);
+    let body = content;
+    if (!data.title && headingTitle) {
+      body = content.replace(/^\s{0,3}#\s+.+$/m, '').replace(/^\n+/, '');
+    }
+
+    const title = String(data.title || headingTitle || slug);
     const excerpt = data.description
       ? String(data.description)
-      : makeExcerpt(plainText, config.excerptLength ?? 120);
+      : makeExcerpt(firstParagraph(body), config.excerptLength ?? 120);
 
     posts.push({
       slug,
@@ -187,7 +215,7 @@ function readPosts(config) {
       date,
       dateLabel: formatDate(date),
       excerpt,
-      contentHtml: marked.parse(content),
+      contentHtml: marked.parse(body),
       assetDir: source.assetDir,
       sourcePath: relativeSource,
       url: `${encodeUrlPath('posts', slug)}/`,
@@ -284,6 +312,7 @@ export async function build({ quiet = false } = {}) {
   const layout = fs.readFileSync(path.join(TEMPLATES_DIR, 'layout.html'), 'utf8');
   const indexTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf8');
   const postTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'post.html'), 'utf8');
+  const archiveTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'archive.html'), 'utf8');
 
   const posts = readPosts(config);
 
@@ -291,18 +320,24 @@ export async function build({ quiet = false } = {}) {
   fs.rmSync(DIST_DIR, { recursive: true, force: true });
   fs.mkdirSync(DIST_DIR, { recursive: true });
 
-  // 首頁
+  const toListItem = (post) => ({
+    title: post.title,
+    date: post.date || '',
+    dateLabel: post.dateLabel,
+    excerpt: post.excerpt,
+    url: post.url,
+  });
+
+  // 首頁：只列最近 N 篇。每天一篇的節奏下，首頁的用途是「看最近發生什麼」，
+  // 不是「一次載入兩年份」。完整清單放在 /archive/。
+  const homeCount = config.homePostCount ?? 30;
   const indexBody = render(indexTemplate, {
     siteTitle: config.title,
     siteDescription: config.description || '',
-    posts: posts.map((post) => ({
-      title: post.title,
-      date: post.date || '',
-      dateLabel: post.dateLabel,
-      excerpt: post.excerpt,
-      url: post.url,
-    })),
+    posts: posts.slice(0, homeCount).map(toListItem),
     emptyState: posts.length === 0 ? '還沒有任何文章。在 posts/ 放一個 .md 檔就會出現在這裡。' : '',
+    // 模板引擎沒有 if，用「0 或 1 個元素的陣列」做條件顯示，把標記留在模板裡。
+    more: posts.length > homeCount ? [{ total: posts.length }] : [],
   });
   fs.writeFileSync(
     path.join(DIST_DIR, 'index.html'),
@@ -312,6 +347,26 @@ export async function build({ quiet = false } = {}) {
       config,
       rootPrefix: '',
       pageTitle: config.title,
+    }),
+    'utf8'
+  );
+
+  // 彙整頁 /archive/：全部文章，精簡樣式（只有日期與標題，不含摘要）。
+  const archiveDir = path.join(DIST_DIR, 'archive');
+  fs.mkdirSync(archiveDir, { recursive: true });
+  const archiveBody = render(archiveTemplate, {
+    total: posts.length,
+    posts: posts.map((post) => ({ ...toListItem(post), url: `../${post.url}` })),
+  });
+  fs.writeFileSync(
+    path.join(archiveDir, 'index.html'),
+    buildPage({
+      layout,
+      bodyHtml: archiveBody,
+      config,
+      rootPrefix: '../',
+      pageTitle: `全部文章 — ${config.title}`,
+      metaDescription: `${config.title} 的全部 ${posts.length} 篇文章。`,
     }),
     'utf8'
   );

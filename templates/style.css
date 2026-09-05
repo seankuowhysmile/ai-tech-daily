@@ -264,6 +264,73 @@ video {
   font-size: 0.95rem;
 }
 
+.more-link {
+  margin: 2rem 0 0;
+  padding-top: 1.75rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.95rem;
+}
+
+.more-link a {
+  text-decoration: none;
+}
+
+.more-link a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- 彙整頁 ---------- */
+
+.archive-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.archive-item + .archive-item {
+  border-top: 1px solid var(--border);
+}
+
+.archive-link {
+  display: flex;
+  gap: 1.25rem;
+  align-items: baseline;
+  padding: 0.7rem 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.archive-link:hover .archive-title {
+  color: var(--accent);
+}
+
+.archive-date {
+  flex: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.archive-title {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: color 0.15s ease;
+}
+
+@media (max-width: 600px) {
+  .archive-link {
+    display: block;
+    padding: 0.85rem 0;
+  }
+
+  .archive-date {
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+}
+
 /* ---------- 文章頁 ---------- */
 
 .post-header {
@@ -368,6 +435,61 @@ video {
   padding: 0;
   background: none;
   font-size: 0.85rem;
+}
+
+/* 摺疊區塊。每日彙整的「當日全部擷取文章」用的就是這個，
+   所以值得做成一張看得出可點擊的卡片，而不是一行裸文字。 */
+.prose details {
+  margin: 2rem 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.prose details > summary {
+  padding: 0.9rem 1.15rem;
+  color: var(--text-muted);
+  font-size: 0.925rem;
+  font-weight: 550;
+  cursor: pointer;
+  list-style: none;
+  transition: color 0.15s ease;
+}
+
+.prose details > summary:hover {
+  color: var(--text);
+}
+
+/* 自訂三角形，讓它在中文字級下對得比較準 */
+.prose details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.prose details > summary::before {
+  content: '▸';
+  display: inline-block;
+  width: 1.1em;
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.prose details[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.prose details[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+
+/* summary 之後的內容內縮，並縮小字級——那是一份長連結清單，不是正文 */
+.prose details > *:not(summary) {
+  margin-left: 1.15rem;
+  margin-right: 1.15rem;
+  font-size: 0.9rem;
+}
+
+.prose details > *:last-child {
+  margin-bottom: 1.15rem;
 }
 
 /* 表格可能比畫面寬，讓它自己橫向捲動，而不是把整個頁面撐開。 */
