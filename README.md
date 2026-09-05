@@ -40,38 +40,27 @@ build.js dev.js render.js
 docs/bot-publish-step.yml   要貼進 bot repo 的 workflow 片段
 ```
 
-## 首次設定（四步）
+## 設定狀態
 
-### 1. 建立公開 repo 並推上去
+網站已上線：**https://seankuowhysmile.github.io/ai-tech-daily/**
 
-```bash
-git remote add origin https://github.com/<你的帳號>/ai-tech-daily.git
-git push -u origin main
-```
+### 1. 公開 repo ✅
 
-### 2. 開啟 GitHub Pages
+`seankuowhysmile/ai-tech-daily`，`site.config.js` 的 `url` 已指向實際網址。
 
-到 repo 的 **Settings → Pages → Build and deployment → Source**，選 **GitHub Actions**。
+### 2. GitHub Pages ✅
 
-> 這一步**只有你能做**，沒有任何腳本能代勞。沒選這個，workflow 會跑完但不會發佈。
+已啟用，來源為 GitHub Actions（用 `gh api -X POST repos/{owner}/{repo}/pages -f build_type=workflow` 設定，不需要進網頁點選）。
 
-接著把 `site.config.js` 的 `url` 改成 `https://<你的帳號>.github.io/ai-tech-daily`（只影響 RSS 裡的連結）。
+### 3. 憑證 ✅
 
-### 3. 產生 PAT 讓 bot 能推文章過來
+`ai-tech-daily` 已加入一把有寫入權限的 deploy key，對應私鑰存在 `ai-tech-vlog-bot` 的 secret `BLOG_DEPLOY_KEY`。
 
-到 **GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens**，建立一個：
+用 deploy key 而不是 PAT 的原因：PAT 最長一年就過期，到期後每日推送會**安靜失敗**——bot 照跑、LINE 照收，只有網站停止更新。deploy key 不會過期，而且權限天生只綁定這一個 repo。
 
-- **Repository access**：只選這個網誌 repo
-- **Permissions → Repository permissions → Contents**：**Read and write**
+### 4. 在 bot 的 workflow 加上推送步驟 ⬜ 待辦
 
-複製產生的 token，到 **ai-tech-vlog-bot 的 Settings → Secrets and variables → Actions**，新增 secret：
-
-- Name：`BLOG_REPO_TOKEN`
-- Secret：剛剛複製的 token
-
-### 4. 在 bot 的 workflow 加上推送步驟
-
-把 `docs/bot-publish-step.yml` 的內容貼進 `ai-tech-vlog-bot/.github/workflows/daily.yml`，位置在 `Commit sent history and article archive` 之後、`Archive video to GitHub Release` 之前。記得把裡面的 `BLOG_REPO` 改成你的實際 repo。
+把 `docs/bot-publish-step.yml` 的內容貼進 `ai-tech-vlog-bot/.github/workflows/daily.yml`，位置在 `Commit sent history and article archive` 之後、`Archive video to GitHub Release` 之前。裡面的 `BLOG_REPO` 已經填好，直接貼即可。
 
 完成後，每天的流程是：bot 產文 → 推到這個 repo → 自動 build → Pages 更新。
 

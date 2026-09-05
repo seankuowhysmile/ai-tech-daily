@@ -3,36 +3,51 @@
 #
 # 位置：接在 "Commit sent history and article archive" 這一步之後、
 #      "Archive video to GitHub Release" 這一步之前。
-#      （縮排要對齊其他 step，也就是 6 個空格開頭的 "- name:"）
+#      縮排要對齊其他 step（"- name:" 前面 6 個空格）。
 #
-# 為什麼用 PAT 而不是預設的 GITHUB_TOKEN：
+# ---------------------------------------------------------------------------
+# 前置作業（已完成，這裡只是紀錄）
+#   1. ai-tech-daily 已加入一把有寫入權限的 deploy key
+#   2. 對應的私鑰已存進本 repo 的 secret：BLOG_DEPLOY_KEY
+#   用的是 deploy key 而不是 PAT，因為 PAT 最長一年就過期，
+#   到期後每日推送會安靜失敗（bot 照跑、LINE 照收，只有網站停止更新）。
+#
+# 為什麼不用預設的 GITHUB_TOKEN：
 #   GitHub 規定「用 GITHUB_TOKEN 推的 commit 不會觸發任何 workflow」，
-#   這是為了避免無限迴圈。若用它推到網誌 repo，那邊的 Pages 部署永遠不會跑，
-#   而且不會報錯，只是安靜地什麼都沒發生。PAT 沒有這個限制。
+#   若用它推到網誌 repo，那邊的 Pages 部署永遠不會跑，而且不會報錯。
+#   deploy key 沒有這個限制。
 #
 # 為什麼 commit 訊息不帶 [skip ci]：
-#   同理，帶了就會被略過。你原本 daily.yml 裡的 [skip ci] 是給自己 repo 用的，
-#   維持原樣沒問題，這一步是推到「另一個 repo」，用自己的訊息。
+#   同理，帶了會被略過。你原本 daily.yml 裡的 [skip ci] 是給自己 repo 用的，
+#   維持原樣沒問題，這一步推的是「另一個 repo」，用自己的訊息。
 #
-# 沒設定 BLOG_REPO_TOKEN 時會直接跳過，不會讓你原本的 pipeline 失敗。
+# 沒設定 BLOG_DEPLOY_KEY 時會直接跳過，不會讓你原本的 pipeline 失敗。
 # ============================================================================
 
       - name: Publish articles to blog repo
         if: success()
         env:
-          BLOG_REPO_TOKEN: ${{ secrets.BLOG_REPO_TOKEN }}
-          # ⚠️ 改成你的公開網誌 repo，格式為 帳號/repo名稱
+          BLOG_DEPLOY_KEY: ${{ secrets.BLOG_DEPLOY_KEY }}
           BLOG_REPO: seankuowhysmile/ai-tech-daily
         run: |
-          if [ -z "$BLOG_REPO_TOKEN" ]; then
-            echo "未設定 BLOG_REPO_TOKEN，略過網誌發佈"
+          if [ -z "$BLOG_DEPLOY_KEY" ]; then
+            echo "未設定 BLOG_DEPLOY_KEY，略過網誌發佈"
             exit 0
           fi
+
+          # 把私鑰寫到只有自己讀得到的檔案，並固定 GitHub 的主機金鑰
+          mkdir -p ~/.ssh
+          printf '%s\n' "$BLOG_DEPLOY_KEY" > ~/.ssh/blog_key
+          chmod 600 ~/.ssh/blog_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i ~/.ssh/blog_key -o IdentitiesOnly=yes"
+
           rm -rf /tmp/blog
-          git clone --depth 1 \
-            "https://x-access-token:${BLOG_REPO_TOKEN}@github.com/${BLOG_REPO}.git" /tmp/blog
+          git clone --depth 1 "git@github.com:${BLOG_REPO}.git" /tmp/blog
+
           mkdir -p /tmp/blog/posts
           cp archive/*.md /tmp/blog/posts/
+
           cd /tmp/blog
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -43,3 +58,4 @@
           fi
           git commit -m "content: 同步每日文章 $(TZ=Asia/Taipei date +%Y-%m-%d)"
           git push
+          echo "已推送到 https://seankuowhysmile.github.io/ai-tech-daily/"
