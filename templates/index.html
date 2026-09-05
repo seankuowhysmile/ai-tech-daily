@@ -1,0 +1,18 @@
+<section class="home-intro">
+  <h1>{{siteTitle}}</h1>
+  <p class="home-description">{{siteDescription}}</p>
+</section>
+
+<p class="empty-state">{{emptyState}}</p>
+
+<ul class="post-list">
+  {{#each posts}}
+  <li class="post-item">
+    <a class="post-link" href="{{url}}">
+      <time class="post-date" datetime="{{date}}">{{dateLabel}}</time>
+      <h2 class="post-title">{{title}}</h2>
+      <p class="post-excerpt">{{excerpt}}</p>
+    </a>
+  </li>
+  {{/each}}
+</ul>

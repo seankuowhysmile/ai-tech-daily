@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{pageTitle}}</title>
+<meta name="description" content="{{metaDescription}}">
+<link rel="stylesheet" href="{{root}}style.css">
+<link rel="alternate" type="application/rss+xml" title="{{siteTitle}}" href="{{root}}rss.xml">
+<script>
+  // 在畫面繪製前就決定佈景，避免深色模式下開頁閃一下白光。
+  try {
+    var saved = localStorage.getItem('theme');
+    if (saved === 'dark' || saved === 'light') {
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  } catch (e) {}
+</script>
+</head>
+<body>
+
+<header class="site-header">
+  <nav class="nav">
+    <a class="nav-brand" href="{{root}}">{{siteTitle}}</a>
+    <div class="nav-links">
+      {{#each nav}}<a href="{{href}}">{{label}}</a>{{/each}}
+      <button class="theme-toggle" type="button" aria-label="切換深色模式" title="切換深色模式">
+        <span class="theme-icon-light" aria-hidden="true">☀</span>
+        <span class="theme-icon-dark" aria-hidden="true">☾</span>
+      </button>
+    </div>
+  </nav>
+</header>
+
+<main class="content">
+{{{body}}}
+</main>
+
+<footer class="site-footer">
+  <p>© {{year}} {{author}} · <a href="{{root}}rss.xml">RSS</a></p>
+</footer>
+
+<script>
+  (function () {
+    var button = document.querySelector('.theme-toggle');
+    if (!button) return;
+    button.addEventListener('click', function () {
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var current = document.documentElement.getAttribute('data-theme') || (prefersDark ? 'dark' : 'light');
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+  })();
+</script>
+
+</body>
+</html>

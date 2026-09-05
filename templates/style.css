@@ -1,0 +1,442 @@
+/* ------------------------------------------------------------------
+   極簡樣式表。build 時會原樣複製到 dist/style.css。
+   佈景色彩全部集中在下面的 CSS 變數，改配色只要動這一區。
+   ------------------------------------------------------------------ */
+
+/* 亮色（預設） */
+:root {
+  --bg: #fdfdfc;
+  --surface: #ffffff;
+  --text: #1c1c1a;
+  --text-muted: #6b6b66;
+  --border: #e6e5e1;
+  --accent: #b5451b;
+  --code-bg: #f4f3ef;
+  --selection: #f6dfd4;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC",
+    "PingFang TC", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --measure: 42rem;
+  --radius: 8px;
+
+  color-scheme: light;
+}
+
+/* 深色：跟隨系統，除非使用者手動選了亮色 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #16161a;
+    --surface: #1d1d21;
+    --text: #e8e6e1;
+    --text-muted: #9d9b94;
+    --border: #2e2e34;
+    --accent: #f0805a;
+    --code-bg: #22222a;
+    --selection: #3d2a22;
+
+    color-scheme: dark;
+  }
+}
+
+/* 深色：使用者按了切換鈕 */
+:root[data-theme="dark"] {
+  --bg: #16161a;
+  --surface: #1d1d21;
+  --text: #e8e6e1;
+  --text-muted: #9d9b94;
+  --border: #2e2e34;
+  --accent: #f0805a;
+  --code-bg: #22222a;
+  --selection: #3d2a22;
+
+  color-scheme: dark;
+}
+
+/* ---------- 基礎 ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--selection);
+}
+
+a {
+  color: var(--accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+img,
+video {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+}
+
+/* ---------- 版面 ---------- */
+
+.site-header,
+.content,
+.site-footer {
+  width: 100%;
+  max-width: var(--measure);
+  margin-inline: auto;
+  padding-inline: 1.25rem;
+}
+
+.content {
+  padding-block: 1rem 4rem;
+}
+
+/* ---------- 導覽列 ---------- */
+
+.site-header {
+  padding-block: 1.5rem;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-brand {
+  font-weight: 650;
+  font-size: 1.05rem;
+  color: var(--text);
+  text-decoration: none;
+  letter-spacing: -0.01em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.nav-links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.925rem;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.theme-toggle {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--text-muted);
+}
+
+/* 亮色時顯示月亮（點了會變深色），深色時顯示太陽。 */
+.theme-icon-dark {
+  display: block;
+}
+
+.theme-icon-light {
+  display: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-icon-dark {
+    display: none;
+  }
+  :root:not([data-theme="light"]) .theme-icon-light {
+    display: block;
+  }
+}
+
+:root[data-theme="dark"] .theme-icon-dark {
+  display: none;
+}
+
+:root[data-theme="dark"] .theme-icon-light {
+  display: block;
+}
+
+/* ---------- 首頁 ---------- */
+
+.home-intro h1 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.9rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.home-description {
+  margin: 0 0 2.5rem;
+  color: var(--text-muted);
+}
+
+.empty-state {
+  color: var(--text-muted);
+}
+
+.empty-state:empty {
+  display: none;
+}
+
+.post-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.post-item + .post-item {
+  border-top: 1px solid var(--border);
+}
+
+.post-link {
+  display: block;
+  padding: 1.75rem 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.post-link:hover .post-title {
+  color: var(--accent);
+}
+
+.post-date {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.post-list .post-title {
+  margin: 0.35rem 0 0.5rem;
+  font-size: 1.3rem;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  transition: color 0.15s ease;
+}
+
+.post-excerpt {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+/* ---------- 文章頁 ---------- */
+
+.post-header {
+  margin: 2rem 0 2.5rem;
+}
+
+.post-header .post-title {
+  margin: 0.4rem 0 0;
+  font-size: 2rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.post-footer {
+  margin-top: 4rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.back-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.925rem;
+}
+
+.back-link:hover {
+  color: var(--accent);
+}
+
+/* ---------- 內文排版 ---------- */
+
+.prose > *:first-child {
+  margin-top: 0;
+}
+
+.prose h2,
+.prose h3,
+.prose h4 {
+  margin: 2.5rem 0 0.75rem;
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+}
+
+.prose h2 {
+  font-size: 1.45rem;
+}
+
+.prose h3 {
+  font-size: 1.2rem;
+}
+
+.prose h4 {
+  font-size: 1.05rem;
+}
+
+.prose p,
+.prose ul,
+.prose ol {
+  margin: 0 0 1.25rem;
+}
+
+.prose li {
+  margin-bottom: 0.4rem;
+}
+
+.prose blockquote {
+  margin: 1.5rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 3px solid var(--accent);
+  color: var(--text-muted);
+}
+
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+.prose hr {
+  margin: 3rem 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.prose code {
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: var(--code-bg);
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.prose pre {
+  margin: 1.5rem 0;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  overflow-x: auto;
+  line-height: 1.6;
+}
+
+.prose pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.85rem;
+}
+
+/* 表格可能比畫面寬，讓它自己橫向捲動，而不是把整個頁面撐開。 */
+.prose .table-scroll,
+.prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.prose table {
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.925rem;
+}
+
+.prose th,
+.prose td {
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.prose th {
+  background: var(--code-bg);
+  font-weight: 600;
+}
+
+/* ---------- 頁尾 ---------- */
+
+.site-footer {
+  padding-block: 2rem 3rem;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: var(--text-muted);
+}
+
+/* ---------- 手機 ---------- */
+
+@media (max-width: 600px) {
+  body {
+    font-size: 16px;
+  }
+
+  .home-intro h1 {
+    font-size: 1.6rem;
+  }
+
+  .post-header .post-title {
+    font-size: 1.6rem;
+  }
+
+  .post-list .post-title {
+    font-size: 1.15rem;
+  }
+
+  .nav {
+    gap: 0.75rem;
+  }
+
+  .nav-links {
+    gap: 1rem;
+  }
+}

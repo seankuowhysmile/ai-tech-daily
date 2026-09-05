@@ -1,0 +1,11 @@
+node_modules/
+dist/
+
+# 作業系統與編輯器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 注意：pnpm-lock.yaml 必須進版控，
+# 否則 GitHub Actions 的 --frozen-lockfile 會失敗。
