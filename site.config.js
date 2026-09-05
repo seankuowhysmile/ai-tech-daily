@@ -12,7 +12,7 @@ export default {
   // 網站的完整網址，RSS 需要絕對路徑才能正確運作。
   // GitHub Pages 專案站格式： https://<你的帳號>.github.io/<repo 名稱>
   // ⚠️ 建好 repo 後記得把這行改成你的實際網址。
-  url: 'https://example.github.io/ai-tech-daily',
+  url: 'https://seankuowhysmile.github.io/ai-tech-daily',
 
   // 語言標籤，會寫進 <html lang="...">
   lang: 'zh-Hant',

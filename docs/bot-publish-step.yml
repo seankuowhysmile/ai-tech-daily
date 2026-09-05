@@ -22,7 +22,7 @@
         env:
           BLOG_REPO_TOKEN: ${{ secrets.BLOG_REPO_TOKEN }}
           # ⚠️ 改成你的公開網誌 repo，格式為 帳號/repo名稱
-          BLOG_REPO: your-account/ai-tech-daily
+          BLOG_REPO: seankuowhysmile/ai-tech-daily
         run: |
           if [ -z "$BLOG_REPO_TOKEN" ]; then
             echo "未設定 BLOG_REPO_TOKEN，略過網誌發佈"
