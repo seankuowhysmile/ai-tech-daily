@@ -224,8 +224,8 @@ function readPosts(config) {
   }
 
   // 新到舊。沒有日期的排最後。
-  // 同一天有多篇時用檔名昇冪：2026-09-05.md 是 2026-09-05-deep-dive.md 的前綴，
-  // 所以純日期的那篇（日報）會排在當天的衍生文章前面，順序才穩定可預期。
+  // 同一天有多篇時（例如 2026-09-05.md 與 2026-09-05-補記.md）用檔名昇冪，
+  // 純日期的那篇排在當天的衍生文章前面，順序才穩定可預期。
   posts.sort((a, b) => {
     if (!a.date && !b.date) return a.baseName.localeCompare(b.baseName);
     if (!a.date) return 1;
