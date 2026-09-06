@@ -30,9 +30,9 @@ export default {
   // 安裝 https://github.com/apps/giscus → 到 https://giscus.app 取得兩組 ID。
   giscus: {
     repo: 'seankuowhysmile/ai-tech-daily',
-    repoId: '',
+    repoId: 'R_kgDOUPNfbw',
     category: 'Announcements',
-    categoryId: '',
+    categoryId: 'DIC_kwDOUPNfb84DFAIH',
   },
 
   // 頁尾連結，顯示在版權宣告與 RSS 之間。href 規則同 nav。
