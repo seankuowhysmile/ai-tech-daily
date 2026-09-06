@@ -60,9 +60,13 @@
 
     // giscus 以 preferred_color_scheme 開場；使用者若先前手動選過佈景，
     // 要在它載入完成時補送一次，否則會一深一淺。
+    // iframe 傳回來的訊息長 { giscus: { ... } }（resize、metadata 都走這個），
+    // 所以只在第一則時同步，不然每次 resize 都會再送一次 setConfig。
+    var giscusSynced = false;
     window.addEventListener('message', function (event) {
       if (event.origin !== 'https://giscus.app') return;
-      if (!event.data || !event.data.giscusIncomingMessage) return;
+      if (!event.data || !event.data.giscus || giscusSynced) return;
+      giscusSynced = true;
       syncGiscusTheme(currentTheme());
     });
 
