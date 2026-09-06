@@ -261,6 +261,8 @@ function buildPage({ layout, bodyHtml, config, rootPrefix, pageTitle, metaDescri
     root: rootPrefix,
     year: new Date().getFullYear(),
     nav: resolveNav(config, rootPrefix),
+    // resolveNav 讀的是 config.nav，包一層就能重用同一套外部／相對連結判斷
+    footerLinks: resolveNav({ nav: config.footerLinks }, rootPrefix),
     body: bodyHtml,
   });
 }
@@ -385,6 +387,9 @@ export async function build({ quiet = false } = {}) {
       dateLabel: post.dateLabel,
       content: post.contentHtml,
       root: '../../',
+      // 模板引擎沒有 if，用「0 或 1 個元素的陣列」做條件顯示（同首頁的 more）。
+      // 只有文章頁有留言區，首頁與 /archive/ 不傳。
+      giscus: config.giscus && config.giscus.repoId ? [config.giscus] : [],
     });
 
     fs.writeFileSync(

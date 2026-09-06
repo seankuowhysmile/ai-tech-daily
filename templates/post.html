@@ -8,6 +8,27 @@
 {{{content}}}
   </div>
 
+  {{#each giscus}}
+  <section class="post-comments">
+    <h2>有其他看法？</h2>
+    <script src="https://giscus.app/client.js"
+            data-repo="{{repo}}"
+            data-repo-id="{{repoId}}"
+            data-category="{{category}}"
+            data-category-id="{{categoryId}}"
+            data-mapping="pathname"
+            data-strict="1"
+            data-reactions-enabled="1"
+            data-emit-metadata="0"
+            data-input-position="top"
+            data-theme="preferred_color_scheme"
+            data-lang="zh-TW"
+            crossorigin="anonymous"
+            async>
+    </script>
+  </section>
+  {{/each}}
+
   <footer class="post-footer">
     <a class="back-link" href="{{root}}">← 回到文章列表</a>
   </footer>

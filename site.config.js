@@ -24,6 +24,20 @@ export default {
     { label: '全部文章', href: 'archive/' },
   ],
 
+  // 留言區（giscus，留言存在 GitHub Discussions）。
+  // repoId 留空就不顯示留言區，網站照常 build。
+  // 前置作業：repo 開啟 Discussions → 建一個 Announcements 型態的 category →
+  // 安裝 https://github.com/apps/giscus → 到 https://giscus.app 取得兩組 ID。
+  giscus: {
+    repo: 'seankuowhysmile/ai-tech-daily',
+    repoId: '',
+    category: 'Announcements',
+    categoryId: '',
+  },
+
+  // 頁尾連結，顯示在版權宣告與 RSS 之間。href 規則同 nav。
+  footerLinks: [{ label: 'GitHub', href: 'https://github.com/seankuowhysmile' }],
+
   // 首頁最多列出幾篇。超過的部分只會出現在 /archive/。
   homePostCount: 30,
 

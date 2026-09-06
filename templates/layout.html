@@ -37,19 +37,42 @@
 </main>
 
 <footer class="site-footer">
-  <p>© {{year}} {{author}} · <a href="{{root}}rss.xml">RSS</a></p>
+  <p>© {{year}} {{author}} · {{#each footerLinks}}<a href="{{href}}">{{label}}</a> · {{/each}}<a href="{{root}}rss.xml">RSS</a></p>
 </footer>
 
 <script>
   (function () {
+    function currentTheme() {
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      return document.documentElement.getAttribute('data-theme') || (prefersDark ? 'dark' : 'light');
+    }
+
+    // giscus 在 iframe 裡，不會跟著站台的 data-theme 換色，要用 postMessage 通知。
+    // 只有文章頁有留言區，其他頁面找不到 iframe 就直接跳過。
+    function syncGiscusTheme(theme) {
+      var frame = document.querySelector('iframe.giscus-frame');
+      if (!frame || !frame.contentWindow) return;
+      frame.contentWindow.postMessage(
+        { giscus: { setConfig: { theme: theme } } },
+        'https://giscus.app'
+      );
+    }
+
+    // giscus 以 preferred_color_scheme 開場；使用者若先前手動選過佈景，
+    // 要在它載入完成時補送一次，否則會一深一淺。
+    window.addEventListener('message', function (event) {
+      if (event.origin !== 'https://giscus.app') return;
+      if (!event.data || !event.data.giscusIncomingMessage) return;
+      syncGiscusTheme(currentTheme());
+    });
+
     var button = document.querySelector('.theme-toggle');
     if (!button) return;
     button.addEventListener('click', function () {
-      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      var current = document.documentElement.getAttribute('data-theme') || (prefersDark ? 'dark' : 'light');
-      var next = current === 'dark' ? 'light' : 'dark';
+      var next = currentTheme() === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', next);
       try { localStorage.setItem('theme', next); } catch (e) {}
+      syncGiscusTheme(next);
     });
   })();
 </script>
