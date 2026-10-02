@@ -30,6 +30,20 @@
   {{/each}}
 
   <footer class="post-footer">
+    <nav class="post-nav" aria-label="前後篇">
+      {{#each older}}
+      <a class="post-nav-link post-nav-older" href="{{url}}" rel="prev">
+        <span class="post-nav-label">← {{dateLabel}}</span>
+        <span class="post-nav-title">{{title}}</span>
+      </a>
+      {{/each}}
+      {{#each newer}}
+      <a class="post-nav-link post-nav-newer" href="{{url}}" rel="next">
+        <span class="post-nav-label">{{dateLabel}} →</span>
+        <span class="post-nav-title">{{title}}</span>
+      </a>
+      {{/each}}
+    </nav>
     <a class="back-link" href="{{root}}">← 回到文章列表</a>
   </footer>
 </article>

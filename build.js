@@ -405,7 +405,10 @@ export async function build({ quiet = false } = {}) {
   );
 
   // 文章頁
-  for (const post of posts) {
+  // 前後篇導覽：日報讀者常見的動作是「看完今天接著看昨天」，不必先回列表。
+  // posts 是新到舊，所以 index + 1 是較早的一篇、index - 1 是較新的一篇。
+  const navItem = (post) => (post ? [{ title: post.title, dateLabel: post.dateLabel, url: `../../${post.url}` }] : []);
+  for (const [index, post] of posts.entries()) {
     const postDir = path.join(DIST_DIR, 'posts', post.slug);
     fs.mkdirSync(postDir, { recursive: true });
 
@@ -418,6 +421,8 @@ export async function build({ quiet = false } = {}) {
       // 模板引擎沒有 if，用「0 或 1 個元素的陣列」做條件顯示（同首頁的 more）。
       // 只有文章頁有留言區，首頁與 /archive/ 不傳。
       giscus: config.giscus && config.giscus.repoId ? [config.giscus] : [],
+      older: navItem(posts[index + 1]),
+      newer: navItem(posts[index - 1]),
     });
 
     fs.writeFileSync(
