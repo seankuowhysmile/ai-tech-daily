@@ -4,7 +4,7 @@ export default {
   title: 'AI 科技日報',
 
   // 副標題，顯示在首頁標題下方（留空字串則不顯示）
-  description: '每日自動彙整的 AI 與科技新聞。一天一篇，挑一則講透，其餘掃過就好。',
+  description: '每天 5 則科技新聞重點，外加一篇深度解析。由 AI 自動整理，附原文連結。',
 
   // 作者名稱，用於 RSS 與頁尾
   author: 'Sean',
