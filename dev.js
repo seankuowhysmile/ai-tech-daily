@@ -16,6 +16,7 @@ const PORT = Number(process.env.PORT) || 4173;
 
 const WATCH_TARGETS = [
   path.join(ROOT, 'posts'),
+  path.join(ROOT, 'pages'),
   path.join(ROOT, 'templates'),
   path.join(ROOT, 'static'),
   path.join(ROOT, 'site.config.js'),
@@ -184,6 +185,6 @@ startWatching();
 
 server.listen(PORT, () => {
   console.log(`\n🚀 開發伺服器： http://localhost:${PORT}`);
-  console.log('   修改 posts/、templates/ 或 site.config.js 會自動重建並刷新瀏覽器。');
+  console.log('   修改 posts/、pages/、templates/ 或 site.config.js 會自動重建並刷新瀏覽器。');
   console.log('   按 Ctrl+C 結束。\n');
 });

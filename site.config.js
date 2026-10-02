@@ -22,6 +22,7 @@ export default {
   nav: [
     { label: '首頁', href: '' },
     { label: '全部文章', href: 'archive/' },
+    { label: '關於', href: 'about/' },
   ],
 
   // 留言區（giscus，留言存在 GitHub Discussions）。

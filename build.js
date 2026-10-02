@@ -14,6 +14,7 @@ import { render, escapeHtml } from './render.js';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const POSTS_DIR = path.join(ROOT, 'posts');
+const PAGES_DIR = path.join(ROOT, 'pages');
 const TEMPLATES_DIR = path.join(ROOT, 'templates');
 const STATIC_DIR = path.join(ROOT, 'static');
 const DIST_DIR = path.join(ROOT, 'dist');
@@ -162,6 +163,17 @@ function findPostSources() {
   return sources;
 }
 
+// 標題若是從內文第一個 # 抓來的，就把那一行從內文移除，
+// 否則版型的 <h1> 加上內文的 <h1> 會讓標題連續出現兩次。
+function titleAndBody(data, content, fallbackTitle) {
+  const headingTitle = firstHeading(content);
+  let body = content;
+  if (!data.title && headingTitle) {
+    body = content.replace(/^\s{0,3}#\s+.+$/m, '').replace(/^\n+/, '');
+  }
+  return { title: String(data.title || headingTitle || fallbackTitle), body };
+}
+
 function readPosts(config) {
   const posts = [];
   const seenSlugs = new Map();
@@ -196,15 +208,7 @@ function readPosts(config) {
     }
     seenSlugs.set(slug, relativeSource);
 
-    // 標題若是從內文第一個 # 抓來的，就把那一行從內文移除，
-    // 否則版型的 <h1> 加上內文的 <h1> 會讓標題連續出現兩次。
-    const headingTitle = firstHeading(content);
-    let body = content;
-    if (!data.title && headingTitle) {
-      body = content.replace(/^\s{0,3}#\s+.+$/m, '').replace(/^\n+/, '');
-    }
-
-    const title = String(data.title || headingTitle || slug);
+    const { title, body } = titleAndBody(data, content, slug);
     const excerpt = data.description
       ? String(data.description)
       : makeExcerpt(firstParagraph(body), config.excerptLength ?? 120);
@@ -235,6 +239,48 @@ function readPosts(config) {
   });
 
   return posts;
+}
+
+// 獨立頁面（pages/*.md → /<檔名>/）：「關於本站」這類內容固定、不屬於每日文章的頁面。
+// 沒有日期、不進首頁與全部文章列表、不進 RSS。front matter 寫 comments: true 才有留言區。
+// 這兩個名稱已經是站內路徑，頁面若取同名會互相覆蓋。
+const RESERVED_PAGE_SLUGS = new Set(['posts', 'archive']);
+
+function readPages(config) {
+  if (!fs.existsSync(PAGES_DIR)) return [];
+  const pages = [];
+  for (const entry of fs.readdirSync(PAGES_DIR, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
+    const markdownPath = path.join(PAGES_DIR, entry.name);
+    const relativeSource = path.relative(ROOT, markdownPath);
+    const raw = fs.readFileSync(markdownPath, 'utf8').replace(/\r\n/g, '\n');
+    const { data, content } = matter(raw);
+    if (data.draft === true) continue;
+
+    const slug = slugify(data.slug || entry.name.replace(/\.md$/, ''));
+    if (!slug) {
+      warn(`${relativeSource} 無法產生有效的網址名稱，已略過。`);
+      continue;
+    }
+    if (RESERVED_PAGE_SLUGS.has(slug)) {
+      throw new Error(
+        `${relativeSource} 的網址名稱 "${slug}" 跟站內既有路徑衝突。\n` +
+          `   請改檔名，或用 front matter 的 slug: 指定不同名稱。`
+      );
+    }
+
+    const { title, body } = titleAndBody(data, content, slug);
+    pages.push({
+      slug,
+      title,
+      description: data.description
+        ? String(data.description)
+        : makeExcerpt(firstParagraph(body), config.excerptLength ?? 120),
+      contentHtml: marked.parse(body),
+      comments: data.comments === true,
+    });
+  }
+  return pages;
 }
 
 /* ---------- 產生頁面 ---------- */
@@ -444,6 +490,31 @@ export async function build({ quiet = false } = {}) {
     }
   }
 
+  // 獨立頁面
+  const pageTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'page.html'), 'utf8');
+  const pages = readPages(config);
+  for (const page of pages) {
+    const pageDir = path.join(DIST_DIR, page.slug);
+    fs.mkdirSync(pageDir, { recursive: true });
+    const pageBody = render(pageTemplate, {
+      title: page.title,
+      content: page.contentHtml,
+      giscus: page.comments && config.giscus && config.giscus.repoId ? [config.giscus] : [],
+    });
+    fs.writeFileSync(
+      path.join(pageDir, 'index.html'),
+      buildPage({
+        layout,
+        bodyHtml: pageBody,
+        config,
+        rootPrefix: '../',
+        pageTitle: `${page.title} — ${config.title}`,
+        metaDescription: page.description,
+      }),
+      'utf8'
+    );
+  }
+
   // 樣式表
   fs.copyFileSync(path.join(TEMPLATES_DIR, 'style.css'), path.join(DIST_DIR, 'style.css'));
 
@@ -460,7 +531,7 @@ export async function build({ quiet = false } = {}) {
 
   if (!quiet) {
     for (const message of warnings) console.warn(`⚠️  ${message}`);
-    console.log(`✅ 已產生 ${posts.length} 篇文章，耗時 ${Date.now() - startedAt}ms → dist/`);
+    console.log(`✅ 已產生 ${posts.length} 篇文章、${pages.length} 個獨立頁面，耗時 ${Date.now() - startedAt}ms → dist/`);
   }
 
   return { posts, warnings: [...warnings] };

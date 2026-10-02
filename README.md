@@ -27,12 +27,14 @@ ai-tech-vlog-bot（private）              這個 repo（public）
 
 ```
 posts/               文章（.md），由 bot 每天同步進來
+pages/               獨立頁面（.md），例如 about.md → /about/；不進文章列表與 RSS，front matter 寫 comments: true 才有留言區
 templates/           版型（純 HTML + {{token}}，打開就是網頁）
 ├── layout.html          外框：head、導覽列、頁尾、深色模式腳本
 ├── index.html           首頁（最近 14 篇）
 ├── archive.html         全部文章列表（外框）
 ├── archive-month.html   全部文章列表的單月一段（build.js 依月份逐段套用）
 ├── post.html            單篇文章
+├── page.html            獨立頁面（沒有日期與前後篇導覽）
 └── style.css            樣式表
 static/              （可選，自己建立）原樣複製到網站根目錄，放 favicon、CNAME
 dist/                建置產物，每次 build 會清空，不進版控
