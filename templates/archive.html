@@ -3,13 +3,6 @@
   <p class="home-description">共 {{total}} 篇。</p>
 </section>
 
-<ul class="archive-list">
-  {{#each posts}}
-  <li class="archive-item">
-    <a class="archive-link" href="{{url}}">
-      <time class="archive-date" datetime="{{date}}">{{date}}</time>
-      <span class="archive-title">{{title}}</span>
-    </a>
-  </li>
-  {{/each}}
-</ul>
+<!-- 每個月一段，由 build.js 逐月套用 archive-month.html 後整段放進來。
+     模板引擎不支援巢狀 each，所以分組在 build.js 做，標記仍留在模板裡。 -->
+{{{months}}}

@@ -1,0 +1,13 @@
+<section class="archive-month">
+  <h2 class="archive-month-title">{{label}} <span class="archive-month-count">{{count}} 篇</span></h2>
+  <ul class="archive-list">
+    {{#each posts}}
+    <li class="archive-item">
+      <a class="archive-link" href="{{url}}">
+        <time class="archive-date" datetime="{{date}}">{{date}}</time>
+        <span class="archive-title">{{title}}</span>
+      </a>
+    </li>
+    {{/each}}
+  </ul>
+</section>

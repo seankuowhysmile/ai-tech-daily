@@ -38,8 +38,9 @@ export default {
   // 頁尾連結，顯示在版權宣告與 RSS 之間。href 規則同 nav。
   footerLinks: [{ label: 'GitHub', href: 'https://github.com/seankuowhysmile' }],
 
-  // 首頁最多列出幾篇。超過的部分只會出現在 /archive/。
-  homePostCount: 30,
+  // 首頁最多列出幾篇。超過的部分只會出現在 /archive/（依月份分段）。
+  // 每篇都帶摘要，14 篇約兩週，再多首頁就太長。
+  homePostCount: 14,
 
   // 首頁摘要的最大字數
   excerptLength: 120,

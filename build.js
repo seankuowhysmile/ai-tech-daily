@@ -244,6 +244,24 @@ const EXTERNAL_LINK = /^(https?:|mailto:|#)/;
 // rootPrefix 是「從這一頁回到站台根目錄」的相對路徑。
 // 首頁是 ''，文章頁在 posts/<slug>/ 底下所以是 '../../'。
 // 全站不使用任何以 / 開頭的絕對路徑，這樣專案站、使用者站、自訂網域、本機都能通用。
+// posts 已經新到舊排好，相鄰同月份的併成一段，順序就跟著對。
+// 沒有日期的文章排在最後，自成一段。
+function groupByMonth(posts) {
+  const groups = [];
+  for (const post of posts) {
+    const key = post.date ? post.date.slice(0, 7) : '';
+    let group = groups[groups.length - 1];
+    if (!group || group.key !== key) {
+      const [year, month] = key.split('-');
+      const label = key ? `${year} 年 ${Number(month)} 月` : '未標日期';
+      group = { key, label, posts: [] };
+      groups.push(group);
+    }
+    group.posts.push(post);
+  }
+  return groups;
+}
+
 function resolveNav(config, rootPrefix) {
   return (config.nav || []).map((item) => ({
     label: item.label,
@@ -318,6 +336,7 @@ export async function build({ quiet = false } = {}) {
   const indexTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf8');
   const postTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'post.html'), 'utf8');
   const archiveTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'archive.html'), 'utf8');
+  const archiveMonthTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'archive-month.html'), 'utf8');
 
   const posts = readPosts(config);
 
@@ -359,9 +378,18 @@ export async function build({ quiet = false } = {}) {
   // 彙整頁 /archive/：全部文章，精簡樣式（只有日期與標題，不含摘要）。
   const archiveDir = path.join(DIST_DIR, 'archive');
   fs.mkdirSync(archiveDir, { recursive: true });
+  // 依月份分段。一天一篇的節奏下一年就四百多篇，一整串沒有分段很難往回找。
+  // 模板引擎刻意只掃一次、不支援巢狀 {{#each}}，所以在這裡逐月套 archive-month.html。
+  const months = groupByMonth(posts).map((group) =>
+    render(archiveMonthTemplate, {
+      label: group.label,
+      count: group.posts.length,
+      posts: group.posts.map((post) => ({ ...toListItem(post), url: `../${post.url}` })),
+    })
+  );
   const archiveBody = render(archiveTemplate, {
     total: posts.length,
-    posts: posts.map((post) => ({ ...toListItem(post), url: `../${post.url}` })),
+    months: months.join('\n'),
   });
   fs.writeFileSync(
     path.join(archiveDir, 'index.html'),
