@@ -29,8 +29,9 @@ ai-tech-vlog-bot（private）              這個 repo（public）
 posts/               文章（.md），由 bot 每天同步進來
 templates/           版型（純 HTML + {{token}}，打開就是網頁）
 ├── layout.html          外框：head、導覽列、頁尾、深色模式腳本
-├── index.html           首頁（最近 30 篇）
-├── archive.html         全部文章列表
+├── index.html           首頁（最近 14 篇）
+├── archive.html         全部文章列表（外框）
+├── archive-month.html   全部文章列表的單月一段（build.js 依月份逐段套用）
 ├── post.html            單篇文章
 └── style.css            樣式表
 static/              （可選，自己建立）原樣複製到網站根目錄，放 favicon、CNAME
@@ -85,5 +86,5 @@ bot 產出的 `YYYY-MM-DD.md` **不需要任何 front matter**，這個引擎會
 - **日期全程當字串處理**，不建立 `Date` 物件做時區運算，也絕不讀取檔案修改時間（`git clone` 不保留 mtime，用它當預設值會讓 CI 上的所有文章都變成「今天」）。
 - **模板只做單次掃描替換**，`{{key}}` 自動 HTML 跳脫、`{{{key}}}` 不跳脫。文章內容裡的 `{{...}}` 不會被誤判成模板指令。
 - **不做 Markdown 淨化**。bot 產出的 `<details>` 摺疊區塊需要原生 HTML 通過。前提是內容來源可信；若日後開放他人投稿，這個前提就不成立了。
-- **首頁只列最近 30 篇**，完整清單在 `/archive/`。每天一篇的節奏下，首頁的用途是「看最近發生什麼」。
+- **首頁只列最近 14 篇**，完整清單在 `/archive/`，依月份分段。每天一篇的節奏下，首頁的用途是「看最近發生什麼」。
 - **不裝語法高亮**。`marked` 已輸出 `class="language-xxx"`，未來要加是純加法。
